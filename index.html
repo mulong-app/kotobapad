@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>ことばパッド</title>
-<meta name="description" content="単語アイコンを選んで合成音声で話せるアプリ">
-<meta name="theme-color" content="#0f1720">
+<meta name="description" content="言葉を選んで合成音声で話せるアプリ">
+<meta name="theme-color" content="#08090a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,54 +13,66 @@
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="app">
   <header class="top">
-    <h1>ことばパッド</h1>
-    <button class="icon-btn" id="btn-settings" aria-label="設定">⚙︎</button>
+    <div class="brand"><b>KOTOBA</b><i>//</i>PAD</div>
+    <div class="status"><span class="led"></span><span id="status-text">STANDBY</span></div>
+    <button class="icon-btn" id="btn-settings" aria-label="設定"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><rect x="14" y="5" width="4" height="4"/><rect x="8" y="15" width="4" height="4"/></svg></button>
   </header>
 
   <!-- セリフ表示エリア -->
-  <section class="sentence" aria-label="セリフ">
-    <div class="chips" id="chips"></div>
-    <div class="sentence-tools">
-      <button class="icon-btn dark" id="btn-back" aria-label="ひとつ消す">⌫</button>
-      <button class="icon-btn dark" id="btn-clear" aria-label="ぜんぶ消す">✕</button>
+  <section class="sentence frame" aria-label="セリフ">
+    <div class="tag">MESSAGE<span>セリフ</span></div>
+    <div class="sentence-body">
+      <div class="chips" id="chips"></div>
+      <div class="sentence-tools">
+        <button class="icon-btn" id="btn-back" aria-label="ひとつ消す"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 6h11v12H9l-6-6z"/><path d="M12 10l4 4M16 10l-4 4"/></svg></button>
+        <button class="icon-btn" id="btn-clear" aria-label="ぜんぶ消す"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 5l14 14M19 5L5 19"/></svg></button>
+      </div>
     </div>
   </section>
 
   <!-- 上エリア:主語 -->
   <section class="panel subject" data-area="subject">
-    <div class="panel-head"><span class="label">主語</span><span class="dots" id="dots-subject"></span></div>
+    <div class="panel-head">
+      <span class="label"><em>01</em>SUBJECT<span>主語</span></span>
+      <span class="pageinfo"><span class="dots" id="dots-subject"></span><span class="pnum" id="pnum-subject"></span></span>
+    </div>
     <div class="pager" id="pager-subject" data-area="subject"></div>
   </section>
 
   <!-- 下エリア:述語・目的語 -->
   <section class="panel predicate" data-area="predicate">
-    <div class="panel-head"><span class="label">述語・目的語</span><span class="dots" id="dots-predicate"></span></div>
+    <div class="panel-head">
+      <span class="label"><em>02</em>PREDICATE<span>述語・目的語</span></span>
+      <span class="pageinfo"><span class="dots" id="dots-predicate"></span><span class="pnum" id="pnum-predicate"></span></span>
+    </div>
     <div class="pager" id="pager-predicate" data-area="predicate"></div>
   </section>
 
   <footer class="actions" id="actions">
-    <button class="btn btn-random" id="btn-random">🎲 ランダム</button>
-    <button class="btn btn-speak" id="btn-speak">🔊 話す</button>
+    <button class="btn btn-random" id="btn-random"><small>RANDOM</small>ランダム</button>
+    <button class="btn btn-speak" id="btn-speak"><small id="speak-sub">TRANSMIT</small><span id="speak-label">話す</span></button>
   </footer>
   <footer class="actions reorder-bar" id="reorder-bar">
-    <span class="hint">ドラッグで並び替え・端で止めるとページ移動</span>
-    <button class="btn btn-done" id="btn-done">完了</button>
+    <span class="hint">REORDER MODE<br><span>ドラッグで移動・左右の端で止めるとページ送り</span></span>
+    <button class="btn btn-done" id="btn-done"><small>DONE</small>完了</button>
   </footer>
 </div>
 
-<!-- 単語の編集シート -->
+<!-- 言葉の編集シート -->
 <dialog id="editor" class="sheet">
   <form method="dialog" id="editor-form">
-    <h2 id="editor-title">ことばを編集</h2>
+    <h2><small>EDIT ENTRY</small><span id="editor-title">言葉を編集</span></h2>
     <label>表示する言葉<input id="f-text" required maxlength="30" autocomplete="off"></label>
-    <label>読み方 <small>(空なら表示どおりに読む)</small><input id="f-reading" maxlength="60" autocomplete="off"></label>
-    <label>絵文字<input id="f-emoji" maxlength="8" autocomplete="off"></label>
-    <div class="field">色<div class="swatches" id="f-colors"></div></div>
+    <label>読み方 <small>空なら表示どおりに読む</small><input id="f-reading" maxlength="60" autocomplete="off"></label>
+    <div class="field">マーカー色<div class="swatches" id="f-colors"></div></div>
     <div class="field">エリア
       <div class="seg" id="f-area">
         <button type="button" data-v="subject">主語</button>
@@ -68,8 +80,8 @@
       </div>
     </div>
     <div class="row">
-      <button type="button" class="btn ghost" id="e-test">🔊 試す</button>
-      <button type="button" class="btn ghost" id="e-reorder">↔︎ 並び替え</button>
+      <button type="button" class="btn ghost" id="e-test">試しに話す</button>
+      <button type="button" class="btn ghost" id="e-reorder">並び替え</button>
     </div>
     <div class="row">
       <button type="button" class="btn danger" id="e-delete">削除</button>
@@ -82,7 +94,7 @@
 <!-- 設定シート -->
 <dialog id="settings" class="sheet">
   <form method="dialog">
-    <h2>設定</h2>
+    <h2><small>SYSTEM CONFIG</small>設定</h2>
     <label>声<select id="s-voice"></select></label>
     <label>速さ <output id="o-rate"></output><input type="range" id="s-rate" min="0.5" max="1.6" step="0.05"></label>
     <label>高さ <output id="o-pitch"></output><input type="range" id="s-pitch" min="0.5" max="1.8" step="0.05"></label>
@@ -92,11 +104,11 @@
         <button type="button" data-v="、">間をあける</button>
       </div>
     </div>
-    <label class="check"><input type="checkbox" id="s-tapspeak"> 単語をタップしたらすぐ読み上げる</label>
+    <label class="check"><input type="checkbox" id="s-tapspeak"> 言葉をタップしたらすぐ読み上げる</label>
     <div class="row">
       <button type="button" class="btn ghost" id="s-export">書き出し</button>
       <button type="button" class="btn ghost" id="s-import">読み込み</button>
-      <button type="button" class="btn danger" id="s-reset">初期化</button>
+      <button type="button" class="btn danger" id="s-reset">全消去</button>
     </div>
     <input type="file" id="s-file" accept="application/json,.json" hidden>
     <div class="row"><button type="submit" class="btn primary">閉じる</button></div>

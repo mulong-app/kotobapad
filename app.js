@@ -2,32 +2,15 @@
 (() => {
 'use strict';
 
-const STORE_KEY = 'kotobapad.v1';
-const PER_PAGE = { subject: 8, predicate: 12 };   // 主語: 4×2 / 述語: 4×3
+const STORE_KEY = 'kotobapad.v2';
+const PER_PAGE = { subject: 12, predicate: 16 };  // 主語: 4列×3行 / 述語: 4列×4行
 const LONG_PRESS_MS = 480;
-const COLORS = ['#ffd27a','#ffb38a','#ff9fae','#f6a8e0','#c7b3ff','#9fc9ff','#8fe0e0','#a8e6a0','#e0e89a','#e6dccb'];
+const COLORS = ['#c9b78f','#d4202c','#e0a526','#7d8b4f','#3fa7a0','#7d95ad','#8a7fb5','#ece6d6'];
 
-const W = (text, emoji, color, reading = '') => ({ id: uid(), text, emoji, color, reading });
 function uid(){ return Math.random().toString(36).slice(2, 10); }
 
-function defaultWords(){
-  return {
-    subject: [
-      W('わたしは','🙋','#ffd27a'), W('ぼくは','🧒','#ffd27a'), W('あなたは','👉','#ffb38a'), W('みんなは','👨‍👩‍👧','#ffb38a'),
-      W('ママは','👩','#ff9fae'), W('パパは','👨','#9fc9ff'), W('せんせいは','🧑‍🏫','#a8e6a0'), W('ともだちは','🤝','#e0e89a'),
-      W('きょう','📅','#c7b3ff'), W('あした','🌅','#c7b3ff'), W('いま','⏰','#c7b3ff'), W('あとで','⏳','#c7b3ff'),
-      W('いぬが','🐕','#e6dccb'), W('ねこが','🐈','#e6dccb'), W('おばあちゃんは','👵','#ff9fae'), W('おじいちゃんは','👴','#9fc9ff'),
-    ],
-    predicate: [
-      W('ありがとう','🙏','#a8e6a0'), W('ごめんなさい','🙇','#e6dccb'), W('はい','⭕','#a8e6a0'), W('いいえ','❌','#ff9fae'),
-      W('おなかがすいた','🍙','#ffd27a'), W('のどがかわいた','🥤','#9fc9ff'), W('ねむい','😴','#c7b3ff'), W('いたい','🤕','#ff9fae'),
-      W('たすけて','🆘','#ff9fae'), W('まって','✋','#ffb38a'), W('わからない','🤔','#e6dccb'), W('だいすき','❤️','#f6a8e0'),
-      W('うれしい','😊','#ffd27a'), W('かなしい','😢','#9fc9ff'), W('こわい','😨','#c7b3ff'), W('たのしい','😆','#ffd27a'),
-      W('みずがほしい','💧','#8fe0e0'), W('ごはんをたべたい','🍚','#ffd27a'), W('トイレにいきたい','🚻','#9fc9ff'), W('そとであそびたい','⚽','#a8e6a0'),
-      W('いえにかえりたい','🏠','#ffb38a'), W('あいたい','🫂','#f6a8e0'), W('げんきです','💪','#a8e6a0'), W('てつだって','🙌','#e0e89a'),
-    ],
-  };
-}
+// 初期状態は空。「＋」から言葉を追加する
+function defaultWords(){ return { subject: [], predicate: [] }; }
 function defaultSettings(){ return { voiceURI: '', rate: 1, pitch: 1, joiner: '', tapSpeak: false }; }
 
 /* ---------- 状態 ---------- */
@@ -62,9 +45,11 @@ function render(area){
   for (let p = 0; p < pages; p++){
     html += '<div class="page">';
     for (const w of items.slice(p * per, (p + 1) * per)){
-      if (w.add) html += `<div class="tile add" data-area="${area}" data-add="1"><span class="em">＋</span><span class="tx">追加</span></div>`;
-      else html += `<div class="tile${drag && drag.id === w.id ? ' placeholder' : ''}" data-area="${area}" data-id="${w.id}" style="--c:${esc(w.color)}"><span class="em">${esc(w.emoji || '')}</span><span class="tx">${esc(w.text)}</span></div>`;
+      if (w.add) html += `<div class="tile add" data-area="${area}" data-add="1"><span class="tx"><b>＋</b>ADD</span></div>`;
+      else html += `<div class="tile${drag && drag.id === w.id ? ' placeholder' : ''}" data-area="${area}" data-id="${w.id}" style="--c:${esc(w.color)}"><span class="tx">${esc(w.text)}</span></div>`;
     }
+    const filled = Math.min(per, Math.max(0, items.length - p * per));
+    html += '<div class="slot"></div>'.repeat(per - filled);
     html += '</div>';
   }
   pager.innerHTML = html;
@@ -78,11 +63,12 @@ function renderDots(area){
   const n = pager.children.length;
   const cur = Math.round(pager.scrollLeft / Math.max(1, pager.clientWidth));
   $('#dots-' + area).innerHTML = n > 1 ? Array.from({ length: n }, (_, i) => `<i class="${i === cur ? 'on' : ''}"></i>`).join('') : '';
+  $('#pnum-' + area).textContent = `P.${String(cur + 1).padStart(2, '0')}/${String(n).padStart(2, '0')}`;
 }
 
 function renderSentence(){
   const el = $('#chips');
-  if (!sentence.length){ el.innerHTML = '<span class="placeholder">ことばを えらんでね</span>'; return; }
+  if (!sentence.length){ el.innerHTML = '<span class="placeholder">言葉を選択してください</span>'; return; }
   el.innerHTML = sentence.map((w, i) => `<span class="chip" data-i="${i}" style="--cc:${esc(w.color)}">${esc(w.text)}</span>`).join('');
   el.scrollTop = el.scrollHeight;
 }
@@ -105,15 +91,21 @@ function speak(text){
     const v = jaVoices.find(v => v.voiceURI === state.settings.voiceURI) || jaVoices[0];
     if (v) u.voice = v;
     u.rate = state.settings.rate; u.pitch = state.settings.pitch;
-    u.onstart = () => document.body.classList.add('speaking');
-    u.onend = u.onerror = () => { if (!speechSynthesis.speaking) document.body.classList.remove('speaking'); };
+    u.onstart = () => setSpeaking(true);
+    u.onend = u.onerror = () => { if (!speechSynthesis.speaking) setSpeaking(false); };
     speechSynthesis.speak(u);
   };
   if (speechSynthesis.speaking || speechSynthesis.pending){ speechSynthesis.cancel(); setTimeout(go, 60); }
   else go();
 }
 function sentenceText(){ return sentence.map(w => w.reading || w.text).join(state.settings.joiner); }
-function stopSpeaking(){ speechSynthesis.cancel(); document.body.classList.remove('speaking'); }
+function stopSpeaking(){ speechSynthesis.cancel(); setSpeaking(false); }
+function setSpeaking(on){
+  document.body.classList.toggle('speaking', on);
+  $('#status-text').textContent = on ? 'TRANSMITTING' : 'STANDBY';
+  $('#speak-sub').textContent = on ? 'ABORT' : 'TRANSMIT';
+  $('#speak-label').textContent = on ? '停止' : '話す';
+}
 
 /* ---------- 単語操作 ---------- */
 function findWord(area, id){ return state.words[area].find(w => w.id === id); }
@@ -229,11 +221,10 @@ function setColor(c){ fColor = c; $('#f-colors').querySelectorAll('button').forE
 function openEditor(area, id){
   const w = id ? findWord(area, id) : null;
   editing = { area, id };
-  $('#editor-title').textContent = w ? 'ことばを編集' : 'ことばを追加';
+  $('#editor-title').textContent = w ? '言葉を編集' : '言葉を追加';
   $('#f-text').value = w ? w.text : '';
   $('#f-reading').value = w ? (w.reading || '') : '';
-  $('#f-emoji').value = w ? (w.emoji || '') : '';
-  setColor(w ? w.color : (area === 'subject' ? '#ffd27a' : '#9fc9ff'));
+  setColor(w ? w.color : (area === 'subject' ? '#c9b78f' : '#d4202c'));
   fArea = area; setSeg($('#f-area'), area);
   $('#e-delete').hidden = !w;
   $('#e-reorder').hidden = !w;
@@ -242,7 +233,7 @@ function openEditor(area, id){
 function saveEditor(){
   const text = $('#f-text').value.trim();
   if (!text) return;
-  const data = { text, reading: $('#f-reading').value.trim(), emoji: $('#f-emoji').value.trim(), color: fColor };
+  const data = { text, reading: $('#f-reading').value.trim(), color: fColor };
   const { area, id } = editing;
   if (id){
     const list = state.words[area];
@@ -280,7 +271,7 @@ function importData(file){
     try {
       const d = JSON.parse(r.result);
       if (!d.words || !Array.isArray(d.words.subject) || !Array.isArray(d.words.predicate)) throw 0;
-      for (const a of ['subject','predicate']) d.words[a] = d.words[a].map(w => ({ id: w.id || uid(), text: String(w.text || ''), reading: String(w.reading || ''), emoji: String(w.emoji || ''), color: String(w.color || '#e6dccb') })).filter(w => w.text);
+      for (const a of ['subject','predicate']) d.words[a] = d.words[a].map(w => ({ id: w.id || uid(), text: String(w.text || ''), reading: String(w.reading || ''), color: String(w.color || '#c9b78f') })).filter(w => w.text);
       state = { words: d.words, settings: { ...defaultSettings(), ...d.settings } };
       save(); renderAll(); settings.close(); alert('読み込みました');
     } catch (_) { alert('ファイルの形式が正しくありません'); }
@@ -314,8 +305,9 @@ function init(){
     speak(sentenceText());
   };
   $('#btn-random').onclick = () => {
-    const pick = a => a[Math.floor(Math.random() * a.length)];
+    const pick = a => a.length ? a[Math.floor(Math.random() * a.length)] : null;
     const s = pick(state.words.subject), p = pick(state.words.predicate);
+    if (!s && !p) return;
     sentence = [s, p].filter(Boolean).map(w => ({ text: w.text, reading: w.reading, color: w.color }));
     renderSentence(); speak(sentenceText());
   };
@@ -330,7 +322,7 @@ function init(){
   $('#e-test').onclick = () => speak($('#f-reading').value.trim() || $('#f-text').value.trim());
   $('#e-delete').onclick = () => {
     const { area, id } = editing;
-    if (!confirm('このことばを削除しますか?')) return;
+    if (!confirm('この言葉を削除しますか?')) return;
     state.words[area] = state.words[area].filter(w => w.id !== id);
     save(); renderAll(); editor.close();
   };
@@ -347,7 +339,7 @@ function init(){
   $('#s-import').onclick = () => $('#s-file').click();
   $('#s-file').onchange = e => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ''; };
   $('#s-reset').onclick = () => {
-    if (!confirm('単語と設定を初期状態に戻しますか?')) return;
+    if (!confirm('登録した言葉と設定をすべて消しますか?')) return;
     state = { words: defaultWords(), settings: defaultSettings() };
     save(); renderAll(); settings.close();
   };
