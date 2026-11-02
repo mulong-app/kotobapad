@@ -1,0 +1,105 @@
+:root{
+  --bg:#0f1720; --panel:#18222e; --line:#2b3948; --ink:#f3efe6; --muted:#8d9aa8;
+  --subj:#f2a541; --pred:#5bb3e8; --speak:#e8573f; --paper:#fbf7ef;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  overscroll-behavior:none;overflow:hidden}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+
+.app{height:100vh;height:100dvh;display:flex;flex-direction:column;gap:8px;
+  padding:calc(env(safe-area-inset-top) + 4px) 0 calc(env(safe-area-inset-bottom) + 8px)}
+
+.top{display:flex;align-items:center;justify-content:space-between;padding:0 14px}
+.top h1{font-size:15px;letter-spacing:.12em;margin:0;color:var(--muted);font-weight:700}
+.icon-btn{width:40px;height:40px;border-radius:12px;font-size:20px;display:grid;place-items:center;background:var(--panel)}
+.icon-btn.dark{background:#e8dfcc;color:#3a3226}
+.icon-btn:active{transform:scale(.92)}
+
+/* セリフ表示 */
+.sentence{margin:0 12px;min-height:88px;background:var(--paper);color:#1d1a15;border-radius:18px;
+  display:flex;align-items:stretch;gap:8px;padding:10px;box-shadow:inset 0 0 0 3px transparent;transition:box-shadow .2s}
+body.speaking .sentence{box-shadow:inset 0 0 0 3px var(--speak)}
+.chips{flex:1;display:flex;flex-wrap:wrap;align-content:center;gap:6px;overflow-y:auto;max-height:118px}
+.chips .placeholder{color:#a69c8a;font-size:18px;padding-left:4px}
+.chip{font-size:22px;font-weight:800;padding:5px 10px;border-radius:10px;background:var(--cc,#efe6d4);line-height:1.2}
+.chip:active{opacity:.6}
+.sentence-tools{display:flex;flex-direction:column;gap:6px;justify-content:center}
+
+/* パネル */
+.panel{margin:0 12px;background:var(--panel);border-radius:18px;display:flex;flex-direction:column;
+  min-height:0;border-top:4px solid var(--accent);overflow:hidden}
+.panel.subject{flex:2;--accent:var(--subj)}
+.panel.predicate{flex:3;--accent:var(--pred)}
+.panel-head{display:flex;justify-content:space-between;align-items:center;padding:6px 14px 6px;font-size:12px;color:var(--muted)}
+.panel-head .label{color:var(--accent);font-weight:800;letter-spacing:.1em}
+.dots{display:flex;gap:6px}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--line);display:block;transition:background .2s,width .2s}
+.dots i.on{background:var(--accent);width:16px;border-radius:4px}
+
+.pager{flex:1;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
+  scrollbar-width:none;min-height:0;-webkit-overflow-scrolling:touch}
+.pager::-webkit-scrollbar{display:none}
+.page{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always;display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:0 10px 10px}
+.subject .page{grid-template-rows:repeat(2,minmax(0,1fr))}
+.predicate .page{grid-template-rows:repeat(3,minmax(0,1fr))}
+
+.tile{background:var(--c,#2a3644);border-radius:14px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:2px;color:#1a1712;min-height:0;overflow:hidden;padding:4px 3px;
+  transition:transform .12s;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.tile .em{font-size:clamp(20px,6.4vw,34px);line-height:1.1}
+.tile .tx{font-size:clamp(11px,3.3vw,15px);font-weight:800;text-align:center;line-height:1.15;overflow-wrap:anywhere}
+.tile.pressed{transform:scale(.92)}
+.tile.flash{animation:flash .35s}
+.tile.add{background:transparent;border:2px dashed var(--line);color:var(--muted);box-shadow:none}
+.tile.add .em{font-size:26px}
+@keyframes flash{50%{filter:brightness(1.25);transform:scale(1.06)}}
+
+/* 並び替えモード */
+body.reordering .pager{overflow:hidden}
+body.reordering .tile{touch-action:none;animation:jiggle .28s ease-in-out infinite alternate}
+body.reordering .tile:nth-child(2n){animation-delay:-.14s}
+.tile.placeholder{opacity:.25;animation:none!important}
+.tile.ghost{position:fixed;z-index:50;pointer-events:none;transform:scale(1.1);
+  box-shadow:0 12px 28px rgba(0,0,0,.5);animation:none;opacity:.95}
+@keyframes jiggle{from{transform:rotate(-1.6deg)}to{transform:rotate(1.6deg)}}
+
+/* 下部ボタン */
+.actions{display:flex;gap:10px;padding:0 12px;align-items:center}
+.btn{height:56px;border-radius:16px;font-size:18px;font-weight:800;padding:0 16px}
+.btn:active{transform:scale(.97)}
+.btn-random{flex:1;background:#2a3644}
+.btn-speak{flex:1.8;background:var(--speak);color:#fff;font-size:22px}
+body.speaking .btn-speak{background:#7a2c20}
+.reorder-bar{display:none}
+body.reordering #actions{display:none}
+body.reordering .reorder-bar{display:flex}
+.reorder-bar .hint{flex:1;font-size:12px;color:var(--muted)}
+.btn-done{background:var(--pred);color:#06243a;min-width:110px}
+
+/* シート */
+.sheet{border:0;padding:0;border-radius:22px;background:#1c2733;color:var(--ink);width:min(440px,94vw);
+  max-height:90dvh;-webkit-user-select:text;user-select:text}
+.sheet::backdrop{background:rgba(0,0,0,.55)}
+.sheet form{padding:18px;display:flex;flex-direction:column;gap:12px}
+.sheet h2{margin:0 0 4px;font-size:18px}
+.sheet label,.sheet .field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.sheet label.check{flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-size:14px}
+.sheet small{font-size:11px}
+.sheet input:not([type=range]):not([type=checkbox]),.sheet select{font-size:16px;padding:10px 12px;border-radius:12px;
+  border:1px solid var(--line);background:#0f1720;color:var(--ink);width:100%}
+.sheet input[type=range]{width:100%;accent-color:var(--pred)}
+.sheet .row{display:flex;gap:8px}
+.sheet .row .btn{flex:1;height:46px;font-size:15px;white-space:nowrap;padding:0 8px}
+.btn.ghost{background:#2a3644}
+.btn.primary{background:var(--pred);color:#06243a}
+.btn.danger{background:#3a1f1f;color:#ff9b8a}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.swatches button{width:34px;height:34px;border-radius:50%;background:var(--c);box-shadow:inset 0 0 0 2px rgba(0,0,0,.15)}
+.swatches button.on{box-shadow:0 0 0 3px #1c2733,0 0 0 5px var(--ink)}
+.seg{display:flex;background:#0f1720;border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;height:38px;border-radius:10px;font-size:14px;color:var(--muted)}
+.seg button.on{background:#2f3e50;color:var(--ink);font-weight:700}
